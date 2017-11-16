@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <script src="http://d3js.org/d3.v3.min.js"></script>
+    
+    <style>
+      h2 {
+        color: black;
+        text-align: left;
+		font-family: sans-serif;
+      }
+	  
+	  text,
+	  p	{
+		font-family: sans-serif;
+		font-size: 0.8em;
+		}
+	  
+      .axis path,
+	  .axis line {
+		fill: none;
+		stroke: black;
+		shape-rendering: crispEdges;
+		}
+	  
+	  .axis text {
+        font-family: sans-serif;
+		font-size: 0.7em;
+      }
+
+      path {
+        fill: none;
+        stroke-width: 2;
+      }	
+	
+    </style>
+
+    <script type="text/javascript">
+      function draw(data) {
+      
+		"use strict";
+	
+		// setting basic variables
+
+        var margin = 75,
+            width = 1400 - margin,
+            height = 600 - margin;
+
+          
+		// grouping data for global average
+		
+		var nestedYear = d3.nest()
+			.key(function(d){
+				return d['date'].getUTCFullYear();
+			})
+			.rollup(function(leaves){ return {
+				count: leaves.length,
+				amountByYear: d3.sum(leaves, function(d) {return d.LoanOriginalAmount;}),
+				avg: d3.mean(leaves, function(d) {return d.LoanOriginalAmount;})
+			}; })
+			.entries(data);
+
+		// grouping data by category
+		
+		var nestedYearCategory = d3.nest()
+			.key(function(d){
+				return d['ListingCategory (numeric)']
+			})
+			.key(function(d){
+				return d['date'].getUTCFullYear();
+			})
+
+			.rollup(function(leaves){ return {
+				count: leaves.length,
+				amountByYearCategory: d3.sum(leaves, function(d) {return d.LoanOriginalAmount;}),
+				avg: d3.mean(leaves, function(d) {return d.LoanOriginalAmount;})
+			}; })
+			.entries(data);
+		
+		// category labels
+		
+		var categories=["Not Available", "Debt Consolidation", "Home Improvement", "Business", "Personal Loan", "Student Use", 
+		"Auto", "Other", "Baby & Adoption", "Boat", "Cosmetic Procedure", "Engagement Ring", 
+		"Green Loans", "Household Expenses", "Large Purchases", "Medical/Dental", "Motorcycle", "RV", "Taxes", 
+		"Vacation", "Wedding Loans"];
+
+		// colors
+		
+		var col=["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd", "#8c564b", 
+		"#e377c2", "#7f7f7f", "#bcbd22", "#17becf","#1f77b4", "#ff7f0e", 
+		"#2ca02c", "#d62728", "#9467bd", "#8c564b", "#e377c2", "#7f7f7f", "#bcbd22", 
+		"#17becf","#2ca02c", "#d62728", "#9467bd", "#8c564b", "#e377c2"];
+			
+		// add global headline and introduction
+		
+		d3.select("body")
+			.append("h2")
+			.text("Correlation of the 2008 Financial Crisis with Development of Personal Loan Sizes");	
+ 
+		var par = d3.select("body")
+			.append("p")
+			.text("Prosper is a person-to-person lending platform, where people in need of a loan can post a request and then \
+				may receive money from other participants willing to invest.");
+		
+		var par0 = d3.select("body")
+			.append("p")
+			.text("The following visualization how the decrease of the average amount of the loans requested coincided with \
+				the financial crisis of 2008 and recovered from 2010 onwards as the economic situation was improving. ");
+		
+		var par1 = d3.select("body")
+			.append("p")
+			.text("The global average is shown as a dashed line, and different available categories are looped through to give an \
+				overview of the different categories available. After the animation, you can explore the categories yourself and find out if\
+				all categories showed the same trends. Note that not all categories were available on the platform throughout the \
+				whole time period.");		
+		
+		
+		var par2 = d3.select("body")
+			.append("p");
+		
+		// create svg element
+ 
+        var svg = d3.select("body")
+			.append("svg")
+            .attr("width", width + margin)
+            .attr("height", height + margin);
+            
+        // Create x and y scales
+		
+ 		var xScale = d3.scale.linear()
+            .range([margin, width-125])
+            .domain([2005,2014]);
+
+        var yScale = d3.scale.linear()
+            .range([height, margin])
+            .domain([0, 18000]);
+
+		// Create x and y axes	
+		
+        var xAxis = d3.svg.axis()
+            .scale(xScale)
+			.tickFormat(d3.format(""));
+
+        var yAxis = d3.svg.axis()
+            .scale(yScale)
+            .orient("left");
+
+		// Append axes	
+		
+        d3.select("svg")
+            .append("g")
+            .attr("class", "x axis")
+            .attr("transform", "translate(0," + height + ")")
+            .call(xAxis);
+
+        d3.select("svg")
+            .append("g")
+            .attr("class", "y axis")
+            .attr("transform", "translate(" + margin + ",0)")
+            .call(yAxis);
+
+		// add titles to the axes (adapted from bl.ocks.org)
+        
+		svg.append("text")
+            .attr("text-anchor", "middle")  // this makes it easy to centre the text as the transform is applied to the anchor
+            .attr("transform", "translate("+ (margin/3) +","+(height/2)+")rotate(-90)")  // text is drawn off the screen top left, move down and out and rotate
+            .text("Average Loan Value in US$");
+
+        svg.append("text")
+            .attr("text-anchor", "middle")  // this makes it easy to centre the text as the transform is applied to the anchor
+            .attr("transform", "translate("+ (width/2) +","+(height+(margin/2))+")")  // centre below axis
+            .text("Year");	
+					
+		// draw the line for the average
+
+		var line = d3.svg.line()
+				.x(function(d) { return xScale(d.key); })
+				.y(function(d) { return yScale(d.values.avg); });
+	
+		svg.append("path")
+			.data(nestedYear)
+			.attr("class", "avgLine")
+			.attr("d", line(nestedYear))
+			.attr("stroke", "black")
+			.attr("stroke-dasharray","10,10");
+
+		// add explanation to average	
+			
+		svg.append("text")
+				.attr("x", function() {return xScale(2005.2);})
+				.attr("y", function() {return yScale(2850);})
+				.text("- - - Total average over all categories");
+			
+		// add a legend
+		
+		var legend = svg.append("g")
+			.attr("class","legend")
+			.attr("transform", "translate(" + (width -100 +"," + 20 + ")"))
+			.selectAll("g")
+			.data(categories)
+			.enter().append("g");
+				
+		// add circles to legend
+		
+		var circlesLegend=legend.append("circle")
+			.attr("class","circlesLegend")
+				.attr("id", function(d,i) {
+					return i;
+					})
+			.attr("cy", function(d,i) {
+				return 50 + (i * 20);
+			})
+			.attr("r", 5)
+			.attr("opacity", 1)
+			.attr("fill", function(d,i) {
+				return col[i];
+				});
+		
+		// add text to legend
+		
+		var textLegend=legend.append("text")
+			.attr("y", function(d,i) {
+				return 50 + i* 20 + 5;
+				})
+			.attr("x", 25)
+			.attr("opacity", 1)
+			.text(function(d) {
+				return d;
+			});
+		
+		// preparing text for categories
+		
+		var textCategory=svg.append("text")
+			.attr("class","category")
+			.attr("x", function() {return xScale(2005.2);})
+			.attr("y", function() {return yScale(17000);});
+
+		// function to draw the lines for categories
+			
+		function category_year(category, col, duration){
+			
+			var dataset_new=nestedYearCategory[category].values;
+			
+			// change text according to category
+			
+			textCategory.text("Showing Category: " + categories[category])
+				.attr("fill",col)
+				.transition()
+				.ease("linear")
+				.duration(duration-100)
+				.each("end", function() {
+					d3.select(this)
+					.attr("fill", "white")
+					});
+
+			// draw lines for categories
+						
+			var line = d3.svg.line()
+				.x(function(d) { return xScale(d.key); })
+				.y(function(d) { return yScale(d.values.avg); });
+		
+			var catline = svg.append("path")
+				.data(dataset_new)
+				.transition()
+				.ease("linear")
+				.duration(duration)
+				.each("start", function() {
+					d3.select(this)
+					.attr("stroke", col);
+					})
+				.attr("class", "catline")
+					.attr("id",function(){ return category; }) // use category number as id
+				.attr("d", line(dataset_new))
+				.attr("stroke", col)
+				.each("end", function() {
+					d3.select(this)
+					.attr("opacity", 0.1);
+					});
+			}
+		
+		// loop through categories, afterwards make category lines mouseover-ready
+		
+		var cat_idx=0;
+		var cat_interval=setInterval(function() {
+			category_year(cat_idx,col[cat_idx],1500);
+			cat_idx++
+			if(cat_idx>=categories.length) {
+				clearInterval(cat_interval);
+				catMouseover();
+				}
+			},2000);
+				
+		// mouseover and -out changes
+		
+		function mouseover(d,i){
+			// get x and y values
+			var xPosition = xScale(d.key);
+			var yPosition = yScale(d.values.avg);
+			// remove opacity
+			var selectedPath=d3.select(this)
+				.attr("opacity",1);
+			// create tooltip label
+			svg.append("text")
+				.attr("id","tooltip")
+				.attr("x", xPosition)
+				.attr("y", yPosition - 10)
+				.text(categories[selectedPath[0][0].id])
+				.attr("font-family","sans-serif")
+				.attr("fill",col[selectedPath[0][0].id]);
+			var selectedPath=d3.select(this)
+				.attr("opacity",1);
+			}
+		
+		function mouseout(){
+			d3.selectAll("#tooltip")
+				.transition()
+				.duration(200)
+				.remove();
+			d3.select(this)
+				.transition()
+				.duration(250)
+				.attr("opacity",0.1);
+			}
+			
+		
+		// add event listeners to lines
+		
+		function catMouseover() {
+			
+			par2.text("Mouse over the lines to explore the categories at your convenience!")
+				.style("font-weight", "bold");
+					
+			svg.selectAll("path.catline")
+				.on("mouseover", mouseover)
+				.on("mouseout", mouseout);
+			}
+		}
+		
+
+		
+
+		
+		
+    </script>
+  </head>
+<body>
+  <script type="text/javascript">
+  /*
+    Use D3 (not dimple.js) to load the TSV file
+    and pass the contents of it to the draw function
+  */
+
+  //example date: 2007-09-12 00:00:00
+  format = d3.time.format("%Y-%m-%d %H:%M:%S");
+
+  d3.csv("prosperLoanData (1).csv", function(d) {
+      // transform data
+      d['date'] = format.parse(d['LoanOriginationDate']);
+	  d['LoanOriginalAmount']=+d['LoanOriginalAmount'];
+	  d['ListingCategory (numeric)']=+d['ListingCategory (numeric)']
+      return d;
+  }, draw);
+  </script>
+</body>
+</html>
