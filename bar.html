@@ -39,7 +39,7 @@
 			   		return xScale(i);
 			   })
 			   .attr("y", function(d) {
-			   		return h - yScale(d);
+			   		return yScale(d);
 			   })
 			   .attr("width", xScale.rangeBand())
 			   .attr("height", function(d) {
