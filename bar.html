@@ -36,6 +36,7 @@
 			//Create bars
 			svg.selectAll("rect")
 			   .data(dataset)
+			   .transition()
 			   .enter()
 			   .append("rect")
 			   .attr("x", function(d, i) {
