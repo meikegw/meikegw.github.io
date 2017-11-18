@@ -77,9 +77,12 @@
 					var numValues = dataset.length;
 					dataset = [];
 					for (var i = 0; i< numValues; i++) {
-						var newNumber = Math.floor(Math.random()*25);
+						var newNumber = Math.floor(Math.random()*100);
 						dataset.push(newNumber);
 					}
+					//Update Scale Domain
+					yScale.domain([0, d3.max(dataset)]);
+					//Update bars
 					svg.selectAll("rect")
 						.data(dataset)
 					        .transition()
