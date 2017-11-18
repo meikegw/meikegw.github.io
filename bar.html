@@ -2,7 +2,7 @@
 <html lang="en">
 	<head>
 		<meta charset="utf-8">
-		<title>D3: A simple bar chart</title>
+		<title>D3: Bar chart with updates</title>
 
 		<style type="text/css">
 			/* No style rules here yet */		
@@ -78,6 +78,10 @@
 					svg.selectAll("rect")
 						.data(dataset)
 					        .transition()
+						.delay(function(d,i) {
+							return i*100;
+						})
+						.duration(500)
 						.attr("y", function(d) {
 							return h-yScale(d);
 						})
@@ -89,6 +93,8 @@
 			   			});
 					svg.selectAll("text")
 			   			.data(dataset)
+						.transition()
+						.duration(1000)
 			  			.text(function(d) {
 			   				return d;
 			   			})
