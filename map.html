@@ -21,8 +21,9 @@
 		var h = 300;
 		
 		//Define path generator, using the Albers USA projection
-		var path = d3.geoPath();
-			//.projection(d3.geoAlbersUsa());
+		var path = d3.geoPath()
+			.projection(d3.geo.albers());			
+			
 			//Create SVG element
 		var svg = d3.select("body")
 			.append("svg")
